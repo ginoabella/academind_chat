@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 
 class AuthForm extends StatefulWidget {
+  final void Function(
+    String email,
+    String userName,
+    String password,
+    bool _isLogin,
+    BuildContext _ctx,
+  ) submitFn;
+  final bool isLoading;
+
+  const AuthForm(this.submitFn, this.isLoading);
+
   @override
   _AuthFormState createState() => _AuthFormState();
 }
 
 class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
-  bool isLogin = false;
+  bool _isLogin = false;
   String _userEmail = '';
   String _userName = '';
   String _userPassword = '';
@@ -15,7 +26,16 @@ class _AuthFormState extends State<AuthForm> {
   void _trySubmit() {
     final isValid = _formKey.currentState.validate();
     FocusScope.of(context).unfocus();
-    if (isValid) _formKey.currentState.save();
+    if (isValid) {
+      _formKey.currentState.save();
+      widget.submitFn(
+        _userEmail.trim(),
+        _userName.trim(),
+        _userPassword.trim(),
+        _isLogin,
+        context,
+      );
+    }
   }
 
   @override
@@ -32,6 +52,7 @@ class _AuthFormState extends State<AuthForm> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   TextFormField(
+                    key: ValueKey('email'),
                     validator: (value) {
                       if (value.isEmpty || !value.contains('@')) {
                         return 'Please enter a valid email address';
@@ -44,8 +65,9 @@ class _AuthFormState extends State<AuthForm> {
                     ),
                     onSaved: (value) => _userEmail = value,
                   ),
-                  if (!isLogin)
+                  if (!_isLogin)
                     TextFormField(
+                      key: ValueKey('username'),
                       validator: (value) {
                         if (value.isEmpty || value.length < 4) {
                           return 'Please provide a valid user name';
@@ -56,6 +78,7 @@ class _AuthFormState extends State<AuthForm> {
                       onSaved: (value) => _userName = value,
                     ),
                   TextFormField(
+                    key: ValueKey('password'),
                     validator: (value) {
                       if (value.isEmpty || value.length < 7) {
                         return 'Please provide a valid password';
@@ -69,21 +92,24 @@ class _AuthFormState extends State<AuthForm> {
                     onSaved: (value) => _userPassword = value,
                   ),
                   SizedBox(height: 12),
-                  RaisedButton(
-                    child: Text(isLogin ? 'Login' : 'SignUp'),
-                    onPressed: _trySubmit,
-                  ),
-                  FlatButton(
-                    textColor: Theme.of(context).primaryColor,
-                    onPressed: () {
-                      setState(() {
-                        isLogin = !isLogin;
-                      });
-                    },
-                    child: Text(isLogin
-                        ? 'Create New Account'
-                        : 'Already have an account'),
-                  ),
+                  if (widget.isLoading) CircularProgressIndicator(),
+                  if (!widget.isLoading)
+                    RaisedButton(
+                      child: Text(_isLogin ? 'Login' : 'SignUp'),
+                      onPressed: _trySubmit,
+                    ),
+                  if (!widget.isLoading)
+                    FlatButton(
+                      textColor: Theme.of(context).primaryColor,
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
+                      child: Text(_isLogin
+                          ? 'Create New Account'
+                          : 'Already have an account'),
+                    ),
                 ],
               ),
             ),
